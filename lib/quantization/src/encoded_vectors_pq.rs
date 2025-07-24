@@ -597,7 +597,6 @@ impl<TStorage: EncodedStorage> EncodedVectors for EncodedVectorsPQ<TStorage> {
     }
 
     fn vectors_count(&self) -> usize {
-        // `vector_division` size is equal to quantized vector size because each chunk is replaced by one `u8` centroid index.
         self.encoded_vectors.vectors_count()
     }
 

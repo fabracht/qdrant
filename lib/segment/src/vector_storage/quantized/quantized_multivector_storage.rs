@@ -12,6 +12,8 @@ use serde::{Deserialize, Serialize};
 use crate::common::operation_error::OperationResult;
 use crate::data_types::vectors::{TypedMultiDenseVectorRef, VectorElementType};
 use crate::types::{MultiVectorComparator, MultiVectorConfig};
+use crate::vector_storage::chunked_mmap_vectors::ChunkedMmapVectors;
+use crate::vector_storage::chunked_vector_storage::{ChunkedVectorStorage, VectorOffsetType};
 
 #[derive(Clone, Copy, Debug, Default, Serialize, Deserialize, PartialEq)]
 pub struct MultivectorOffset {
@@ -60,9 +62,7 @@ impl MultivectorOffsetsStorageRam {
             offsets,
         })
     }
-}
 
-impl MultivectorOffsetsStorageRam {
     pub fn load(path: &Path) -> OperationResult<Self> {
         let offsets_file = std::fs::OpenOptions::new()
             .read(true)
@@ -130,9 +130,7 @@ impl MultivectorOffsetsStorageMmap {
         create_offsets_file_from_iter(path, count, offsets)?;
         MultivectorOffsetsStorageMmap::load(path)
     }
-}
 
-impl MultivectorOffsetsStorageMmap {
     pub fn load(path: &Path) -> OperationResult<Self> {
         let offsets_file = std::fs::OpenOptions::new()
             .read(true)
@@ -169,7 +167,6 @@ impl MultivectorOffsetsStorage for MultivectorOffsetsStorageMmap {
     }
 
     fn flusher(&self) -> MmapFlusher {
-        // Mmap storage does not need a flusher, as it is non-appendable and already backed by a file.
         Box::new(|| Ok(()))
     }
 
@@ -179,6 +176,47 @@ impl MultivectorOffsetsStorage for MultivectorOffsetsStorageMmap {
 
     fn immutable_files(&self) -> Vec<PathBuf> {
         vec![self.path.clone()]
+    }
+}
+
+impl MultivectorOffsetsStorage for ChunkedMmapVectors<MultivectorOffset> {
+    fn get_offset(&self, idx: PointOffsetType) -> MultivectorOffset {
+        ChunkedVectorStorage::get(self, idx as VectorOffsetType)
+            .and_then(|offsets| offsets.first())
+            .cloned()
+            .unwrap_or_default()
+    }
+
+    fn len(&self) -> usize {
+        ChunkedVectorStorage::len(self)
+    }
+
+    fn flusher(&self) -> MmapFlusher {
+        let flusher = ChunkedMmapVectors::flusher(self);
+        Box::new(move || {
+            flusher().map_err(|e| {
+                std::io::Error::other(format!("Failed to flush multivector offsets storage: {e}"))
+            })?;
+            Ok(())
+        })
+    }
+
+    fn update_offset(
+        &mut self,
+        id: PointOffsetType,
+        offset: MultivectorOffset,
+        hw_counter: &HardwareCounterCell,
+    ) -> std::io::Result<()> {
+        ChunkedVectorStorage::insert(self, id as VectorOffsetType, &[offset], hw_counter)
+            .map_err(std::io::Error::other)
+    }
+
+    fn files(&self) -> Vec<PathBuf> {
+        ChunkedVectorStorage::files(self)
+    }
+
+    fn immutable_files(&self) -> Vec<PathBuf> {
+        ChunkedVectorStorage::immutable_files(self)
     }
 }
 
@@ -291,7 +329,7 @@ where
     QuantizedStorage: EncodedVectors,
     TMultivectorOffsetsStorage: MultivectorOffsetsStorage,
 {
-    // TODO(colbert): refactor `EncodedVectors` to support multi vector storage after quantization migration
+    // TODO(colbert): refactor `EncodedVectors` to store flattened vector data
     type EncodedQuery = Vec<QuantizedStorage::EncodedQuery>;
 
     fn is_on_disk(&self) -> bool {
@@ -428,6 +466,18 @@ where
         _: &HardwareCounterCell,
     ) -> f32 {
         match enabled {}
+    }
+
+    fn files(&self) -> Vec<PathBuf> {
+        let mut files = self.quantized_storage.files();
+        files.extend(self.offsets.files());
+        files
+    }
+
+    fn immutable_files(&self) -> Vec<PathBuf> {
+        let mut files = self.quantized_storage.immutable_files();
+        files.extend(self.offsets.immutable_files());
+        files
     }
 }
 

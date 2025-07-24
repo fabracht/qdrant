@@ -432,6 +432,7 @@ impl<TBitsStoreType: BitsStoreType, TStorage: EncodedStorage>
             metadata,
             metadata_path: Some(meta_path.to_path_buf()),
             bits_store_type: PhantomData,
+            metadata_path: Some(meta_path.to_path_buf()),
         })
     }
 
@@ -812,7 +813,7 @@ impl<TBitsStoreType: BitsStoreType, TStorage: EncodedStorage>
     }
 
     pub fn get_quantized_vector(&self, i: PointOffsetType) -> &[u8] {
-        self.encoded_vectors.get_vector_data(i as _)
+        self.encoded_vectors.get_vector_data(i)
     }
 
     pub fn layout(&self) -> Layout {

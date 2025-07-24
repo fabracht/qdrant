@@ -419,10 +419,17 @@ impl LocalShard {
                 "Shard has no appendable segments, this should never happen. Creating new appendable segment now",
             );
             let segments_path = LocalShard::segments_path(shard_path);
-            let segment_config = collection_config.read().await.params.to_segment_config()?;
+            let (collection_params, quantization_config) = {
+                let collection_config = collection_config.read().await;
+                (
+                    collection_config.params.clone(),
+                    collection_config.quantization_config.clone(),
+                )
+            };
             segment_holder.create_appendable_segment(
                 &segments_path,
-                segment_config,
+                &collection_params,
+                &quantization_config,
                 payload_index_schema.clone(),
             )?;
         }
@@ -527,7 +534,9 @@ impl LocalShard {
         let mut segment_holder = SegmentHolder::default();
         let mut build_handlers = vec![];
 
-        let vector_params = config.params.to_base_vector_data()?;
+        let vector_params = config
+            .params
+            .to_base_vector_data(&config.quantization_config)?;
         let sparse_vector_params = config.params.to_sparse_vector_data()?;
         let segment_number = config.optimizer_config.get_number_segments();
 
@@ -875,12 +884,14 @@ impl LocalShard {
         }
 
         let segments_path = Self::segments_path(&self.path);
-        let segment_config = self
-            .collection_config
-            .read()
-            .await
-            .params
-            .to_segment_config()?;
+        let (collection_params, quantization_config) = {
+            let collection_config = self.collection_config.read().await;
+            (
+                collection_config.params.clone(),
+                collection_config.quantization_config.clone(),
+            )
+        };
+        let temp_path = temp_path.to_owned();
         let payload_index_schema = self.payload_index_schema.clone();
         let temp_path = temp_path.to_owned();
 
@@ -891,6 +902,8 @@ impl LocalShard {
                 segments.clone(),
                 &segments_path,
                 Some(segment_config),
+                Some(&collection_params),
+                &quantization_config,
                 payload_index_schema.clone(),
                 &temp_path,
                 &tar_c.descend(Path::new(SEGMENTS_PATH))?,
