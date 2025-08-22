@@ -181,7 +181,7 @@ impl SegmentEntry for ProxySegment {
         hw_counter: &HardwareCounterCell,
     ) -> OperationResult<bool> {
         log::debug!(
-            "upsert_point in ProxySegment: op_num={}, point_id={}",
+            "Upsert_point in ProxySegment: op_num={}, point_id={}",
             op_num,
             point_id
         );
@@ -199,7 +199,7 @@ impl SegmentEntry for ProxySegment {
         hw_counter: &HardwareCounterCell,
     ) -> OperationResult<bool> {
         let mut was_deleted = false;
-        log::info!(
+        log::debug!(
             "delete_point in ProxySegment: op_num={}, point_id={}",
             op_num,
             point_id
@@ -223,12 +223,13 @@ impl SegmentEntry for ProxySegment {
                 point_offset
             }
             LockedSegment::Proxy(proxy) => {
-                log::info!(
+                log::debug!(
                     "Double proxy delete_point: op_num={}, point_id={}",
                     op_num,
                     point_id
                 );
-                if proxy.read().has_point(point_id) {
+                let proxy_read = proxy.read();
+                if proxy_read.has_point(point_id) {
                     was_deleted = self
                         .deleted_points
                         .write()
@@ -247,7 +248,7 @@ impl SegmentEntry for ProxySegment {
 
         self.set_deleted_offset(point_offset);
 
-        log::info!(
+        log::debug!(
             "delete_point to write segment: op_num={}, point_id={}",
             op_num,
             point_id

@@ -590,7 +590,7 @@ fn test_double_proxies() {
 
     let holder = Arc::new(RwLock::new(holder));
 
-    let before_ids = holder
+    let before_segment_ids = holder
         .read()
         .iter()
         .map(|(id, _)| *id)
@@ -608,7 +608,15 @@ fn test_double_proxies() {
             None,
             schema.clone(),
         )
-            .unwrap();
+        .unwrap();
+
+    // check inner proxy contains points
+    let points = inner_proxies[0]
+        .1
+        .get()
+        .read()
+        .read_range(Some(1.into()), None);
+    assert_eq!(&points, &[1.into(), 2.into(), 3.into(), 4.into(), 5.into()]);
 
     log::debug!("Writing to inner proxy segment");
     inner_proxies[0]
@@ -619,12 +627,7 @@ fn test_double_proxies() {
         .unwrap();
 
     let (outer_proxies, outer_tmp_segment, outer_segments_lock) =
-        SegmentHolder::proxy_all_segments(
-            inner_segments_lock,
-            segments_dir.path(),
-            None,
-            schema,
-        )
+        SegmentHolder::proxy_all_segments(inner_segments_lock, segments_dir.path(), None, schema)
             .unwrap();
 
     log::debug!("Writing to outer proxy segment");
@@ -643,20 +646,16 @@ fn test_double_proxies() {
     SegmentHolder::unproxy_all_segments(outer_segments_lock, outer_proxies, outer_tmp_segment)
         .unwrap();
 
-    SegmentHolder::unproxy_all_segments(
-        holder.upgradable_read(),
-        inner_proxies,
-        inner_tmp_segment,
-    )
+    SegmentHolder::unproxy_all_segments(holder.upgradable_read(), inner_proxies, inner_tmp_segment)
         .unwrap();
 
-    let after_ids = holder
+    let after_segment_ids = holder
         .read()
         .iter()
         .map(|(id, _)| *id)
         .collect::<HashSet<_>>();
 
-    let diff: HashSet<_> = after_ids.difference(&before_ids).collect();
+    let diff: HashSet<_> = after_segment_ids.difference(&before_segment_ids).collect();
     assert_eq!(
         diff.len(),
         1,

@@ -135,7 +135,7 @@ impl ProxySegment {
         point_id: PointIdType,
         hw_counter: &HardwareCounterCell,
     ) -> OperationResult<bool> {
-        log::info!("moving point {point_id} to write segment");
+        log::debug!("moving point {point_id} to write segment");
         let deleted_points_guard = self.deleted_points.upgradable_read();
 
         let (point_offset, local_version) = {
@@ -165,7 +165,7 @@ impl ProxySegment {
                 return Ok(false);
             };
 
-            log::info!("moving point {point_id} with version {local_version} to write segment");
+            log::debug!("moving point {point_id} with version {local_version} to write segment");
 
             // Equal or higher point version is already moved into write segment - delete from
             // wrapped segment and do not move it again
@@ -207,7 +207,7 @@ impl ProxySegment {
 
         {
             let mut deleted_points_write = RwLockUpgradableReadGuard::upgrade(deleted_points_guard);
-            log::info!("marking point {point_id} as deleted in wrapped segment");
+            log::debug!("marking point {point_id} as deleted in wrapped segment");
             deleted_points_write.insert(
                 point_id,
                 ProxyDeletedPoint {
@@ -314,10 +314,10 @@ impl ProxySegment {
                     for (point_id, versions) in deleted_points.iter() {
                         // Delete points here with their operation version, that'll bump the optimized
                         // segment version and will ensure we flush the new changes
+                        let point_version = wrapped_segment.point_version(*point_id).unwrap_or(0);
                         debug_assert!(
-                            versions.operation_version
-                                >= wrapped_segment.point_version(*point_id).unwrap_or(0),
-                            "proxied point deletes should have newer version than point in segment",
+                            versions.operation_version >= point_version,
+                            "proxied point deletes should have newer version than point in segment ({versions:?} >= {point_version})",
                         );
                         wrapped_segment.delete_point(
                             versions.operation_version,
