@@ -131,6 +131,7 @@ impl SegmentHolder {
     /// The segment gets assigned a new unique ID.
     pub fn add_new_locked(&mut self, segment: LockedSegment) -> SegmentId {
         let segment_id = self.generate_new_key();
+        log::debug!("Adding new segment with ID: {segment_id}");
         self.add_existing_locked(segment_id, segment);
         segment_id
     }
@@ -162,6 +163,7 @@ impl SegmentHolder {
     }
 
     pub fn remove(&mut self, remove_ids: &[SegmentId]) -> Vec<LockedSegment> {
+        log::debug!("Removing segments: {remove_ids:?}");
         let mut removed_segments = vec![];
         for remove_id in remove_ids {
             let removed_segment = self.appendable_segments.remove(remove_id);
@@ -196,6 +198,7 @@ impl SegmentHolder {
     where
         T: Into<LockedSegment>,
     {
+        log::debug!("Swapping segments: removing {remove_ids:?} and adding new segment");
         let new_id = self.add_new(segment);
         (new_id, self.remove(remove_ids))
     }

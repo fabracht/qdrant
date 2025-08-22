@@ -180,6 +180,11 @@ impl SegmentEntry for ProxySegment {
         vectors: NamedVectors,
         hw_counter: &HardwareCounterCell,
     ) -> OperationResult<bool> {
+        log::debug!(
+            "upsert_point in ProxySegment: op_num={}, point_id={}",
+            op_num,
+            point_id
+        );
         self.move_if_exists(op_num, point_id, hw_counter)?;
         self.write_segment
             .get()

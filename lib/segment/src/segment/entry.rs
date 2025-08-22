@@ -109,6 +109,7 @@ impl SegmentEntry for Segment {
         mut vectors: NamedVectors,
         hw_counter: &HardwareCounterCell,
     ) -> OperationResult<bool> {
+        log::debug!("Upserting point {point_id} with vectors: {vectors:?}");
         debug_assert!(self.is_appendable());
         check_named_vectors(&vectors, &self.segment_config)?;
         vectors.preprocess(|name| self.config().vector_data.get(name).unwrap());

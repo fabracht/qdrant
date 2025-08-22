@@ -135,6 +135,7 @@ impl ProxySegment {
         point_id: PointIdType,
         hw_counter: &HardwareCounterCell,
     ) -> OperationResult<bool> {
+        log::info!("moving point {point_id} to write segment");
         let deleted_points_guard = self.deleted_points.upgradable_read();
 
         let (point_offset, local_version) = {
@@ -163,12 +164,15 @@ impl ProxySegment {
                 return Ok(false);
             };
 
+            log::info!("moving point {point_id} with version {local_version} to write segment");
+
             // Equal or higher point version is already moved into write segment - delete from
             // wrapped segment and do not move it again
             if deleted_points_guard
                 .get(&point_id)
                 .is_some_and(|&deleted| deleted.local_version >= local_version)
             {
+                log::debug!("Equal or higher point version is already moved into write segment");
                 drop(deleted_points_guard);
                 self.set_deleted_offset(point_offset);
                 return Ok(false);
@@ -194,6 +198,7 @@ impl ProxySegment {
 
         {
             let mut deleted_points_write = RwLockUpgradableReadGuard::upgrade(deleted_points_guard);
+            log::info!("marking point {point_id} as deleted in wrapped segment");
             deleted_points_write.insert(
                 point_id,
                 ProxyDeletedPoint {
