@@ -161,6 +161,7 @@ impl ProxySegment {
 
             // Point doesn't exist in wrapped segment - do nothing
             let Some(local_version) = wrapped_segment_guard.point_version(point_id) else {
+                log::debug!("point {point_id} does not exist in wrapped segment");
                 return Ok(false);
             };
 
@@ -177,6 +178,14 @@ impl ProxySegment {
                 self.set_deleted_offset(point_offset);
                 return Ok(false);
             }
+
+            let exists = wrapped_segment_guard.all_vectors(point_id, hw_counter);
+            if let Err(exists) = exists {
+                log::debug!(
+                    "vectors point {point_id} does not exist in wrapped segment but it has a version!"
+                );
+                return Err(exists);
+            };
 
             let (all_vectors, payload) = (
                 wrapped_segment_guard.all_vectors(point_id, hw_counter)?,

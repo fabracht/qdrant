@@ -132,6 +132,7 @@ impl SegmentEntry for Segment {
         point_id: PointIdType,
         hw_counter: &HardwareCounterCell,
     ) -> OperationResult<bool> {
+        log::debug!("Deleting point {point_id} in regular segment");
         let internal_id = self.id_tracker.borrow().internal_id(point_id);
         match internal_id {
             // Point does already not exist anymore

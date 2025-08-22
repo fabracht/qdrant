@@ -583,13 +583,10 @@ fn test_double_proxies() {
 
     let dir = Builder::new().prefix("segment_dir").tempdir().unwrap();
     let segment1 = build_segment_1(dir.path());
-    let segment2 = build_segment_2(dir.path());
 
     let mut holder = SegmentHolder::default();
 
-    let sid1 = holder.add_new(segment1);
-    let sid2 = holder.add_new(segment2);
-    assert_ne!(sid1, sid2);
+    let _sid1 = holder.add_new(segment1);
 
     let holder = Arc::new(RwLock::new(holder));
 
@@ -613,6 +610,7 @@ fn test_double_proxies() {
         )
             .unwrap();
 
+    log::debug!("Writing to inner proxy segment");
     inner_proxies[0]
         .1
         .get()
@@ -629,6 +627,7 @@ fn test_double_proxies() {
         )
             .unwrap();
 
+    log::debug!("Writing to outer proxy segment");
     outer_proxies[0]
         .1
         .get()

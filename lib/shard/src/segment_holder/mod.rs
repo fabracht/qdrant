@@ -151,6 +151,7 @@ impl SegmentHolder {
     ///
     /// The segment gets the provided ID, which must not be in the segment holder yet.
     pub fn add_existing_locked(&mut self, segment_id: SegmentId, segment: LockedSegment) {
+        log::debug!("Add new segment with ID: {segment_id}");
         debug_assert!(
             self.get(segment_id).is_none(),
             "cannot add segment with ID {segment_id}, it already exists",
@@ -221,6 +222,7 @@ impl SegmentHolder {
     where
         T: Into<LockedSegment>,
     {
+        log::debug!("Replacing segment with ID {segment_id} by new segment");
         // Remove existing segment, check precondition
         let mut removed = self.remove(&[segment_id]);
         if removed.is_empty() {
@@ -1073,6 +1075,7 @@ impl SegmentHolder {
         LockedSegment,
         RwLockUpgradableReadGuard<'a, SegmentHolder>,
     )> {
+        log::debug!("Proxying all segments for snapshotting");
         // This counter will be used to measure operations on temp segment,
         // which is part of internal process and can be ignored
         let hw_counter = HardwareCounterCell::disposable();
@@ -1205,6 +1208,10 @@ impl SegmentHolder {
         proxies: Vec<(SegmentId, LockedSegment)>,
         tmp_segment: LockedSegment,
     ) -> OperationResult<()> {
+        log::debug!(
+            "Unproxying all segments after snapshotting ({:?})",
+            proxies.len()
+        );
         // We must propagate all changes in the proxy into their wrapped segments, as we'll put the
         // wrapped segment back into the segment holder. This can be an expensive step if we
         // collected a lot of changes in the proxy, so we do this in two batches to prevent
