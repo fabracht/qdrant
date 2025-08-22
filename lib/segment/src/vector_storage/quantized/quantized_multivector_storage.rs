@@ -201,7 +201,7 @@ impl MultivectorOffsetsStorage for ChunkedMmapVectors<MultivectorOffset> {
         })
     }
 
-    fn update_offset(
+    fn upsert_offset(
         &mut self,
         id: PointOffsetType,
         offset: MultivectorOffset,
@@ -466,18 +466,6 @@ where
         _: &HardwareCounterCell,
     ) -> f32 {
         match enabled {}
-    }
-
-    fn files(&self) -> Vec<PathBuf> {
-        let mut files = self.quantized_storage.files();
-        files.extend(self.offsets.files());
-        files
-    }
-
-    fn immutable_files(&self) -> Vec<PathBuf> {
-        let mut files = self.quantized_storage.immutable_files();
-        files.extend(self.offsets.immutable_files());
-        files
     }
 }
 

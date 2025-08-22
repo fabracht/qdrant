@@ -1,18 +1,19 @@
 use std::path::PathBuf;
 
+use common::types::PointOffsetType;
 use memory::mmap_type::MmapFlusher;
 
 use crate::vector_storage::chunked_mmap_vectors::ChunkedMmapVectors;
 use crate::vector_storage::chunked_vector_storage::{ChunkedVectorStorage, VectorOffsetType};
 
 impl quantization::EncodedStorage for ChunkedMmapVectors<u8> {
-    fn get_vector_data(&self, index: usize) -> &[u8] {
-        ChunkedVectorStorage::get(self, index).unwrap_or_default()
+    fn get_vector_data(&self, index: PointOffsetType) -> &[u8] {
+        ChunkedVectorStorage::get(self, index as VectorOffsetType).unwrap_or_default()
     }
 
-    fn update_vector(
+    fn upsert_vector(
         &mut self,
-        id: u32,
+        id: PointOffsetType,
         vector: &[u8],
         hw_counter: &common::counter::hardware_counter::HardwareCounterCell,
     ) -> std::io::Result<()> {

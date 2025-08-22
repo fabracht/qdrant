@@ -148,53 +148,6 @@ impl<'a> QuantizedScorerBuilder<'a> {
         }
     }
 
-    fn build_with_metric_bytes<TElement, TMetric>(
-        self,
-    ) -> OperationResult<Box<dyn QueryScorerBytes + 'a>>
-    where
-        TElement: PrimitiveVectorElement,
-        TMetric: Metric<TElement> + 'a,
-    {
-        match self.quantized_storage {
-            QuantizedVectorStorage::ScalarRam(storage) => {
-                self.new_quantized_scorer_bytes::<TElement, TMetric>(storage)
-            }
-            QuantizedVectorStorage::ScalarMmap(storage) => {
-                self.new_quantized_scorer_bytes::<TElement, TMetric>(storage)
-            }
-            QuantizedVectorStorage::ScalarChunkedMmap(storage) => {
-                self.new_quantized_scorer_bytes::<TElement, TMetric>(storage)
-            }
-            QuantizedVectorStorage::PQRam(storage) => {
-                self.new_quantized_scorer_bytes::<TElement, TMetric>(storage)
-            }
-            QuantizedVectorStorage::PQMmap(storage) => {
-                self.new_quantized_scorer_bytes::<TElement, TMetric>(storage)
-            }
-            QuantizedVectorStorage::PQChunkedMmap(storage) => {
-                self.new_quantized_scorer_bytes::<TElement, TMetric>(storage)
-            }
-            QuantizedVectorStorage::BinaryRam(storage) => {
-                self.new_quantized_scorer_bytes::<TElement, TMetric>(storage)
-            }
-            QuantizedVectorStorage::BinaryMmap(storage) => {
-                self.new_quantized_scorer_bytes::<TElement, TMetric>(storage)
-            }
-            QuantizedVectorStorage::BinaryChunkedMmap(storage) => {
-                self.new_quantized_scorer_bytes::<TElement, TMetric>(storage)
-            }
-            QuantizedVectorStorage::ScalarRamMulti(_)
-            | QuantizedVectorStorage::ScalarMmapMulti(_)
-            | QuantizedVectorStorage::ScalarChunkedMmapMulti(_)
-            | QuantizedVectorStorage::PQRamMulti(_)
-            | QuantizedVectorStorage::PQMmapMulti(_)
-            | QuantizedVectorStorage::PQChunkedMmapMulti(_)
-            | QuantizedVectorStorage::BinaryRamMulti(_)
-            | QuantizedVectorStorage::BinaryMmapMulti(_)
-            | QuantizedVectorStorage::BinaryChunkedMmapMulti(_) => Err(OperationError::WrongMulti),
-        }
-    }
-
     fn new_quantized_scorer<TElement, TMetric>(
         self,
         quantized_storage: &'a impl EncodedVectors,

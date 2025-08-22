@@ -14,7 +14,7 @@ use crate::common::operation_time_statistics::{
 use crate::data_types::query_context::VectorQueryContext;
 use crate::data_types::vectors::{QueryVector, VectorRef};
 use crate::id_tracker::IdTrackerSS;
-use crate::index::hnsw_index::hnsw::HNSWIndex;
+use crate::index::hnsw_index::point_scorer::FilteredScorer;
 use crate::index::struct_payload_index::StructPayloadIndex;
 use crate::index::vector_index_search_common::{
     get_oversampled_top, is_quantized_search, postprocess_search_result,
@@ -128,7 +128,6 @@ impl VectorIndex for PlainVectorIndex {
                                 .flatten(),
                             None,
                             deleted_points,
-                            params,
                             query_context.hardware_counter(),
                         )?;
                         let oversampled_top =
@@ -173,7 +172,6 @@ impl VectorIndex for PlainVectorIndex {
                                 .flatten(),
                             None,
                             deleted_points,
-                            params,
                             query_context.hardware_counter(),
                         )?;
                         let oversampled_top =

@@ -115,7 +115,7 @@ impl quantization::EncodedStorageBuilder for QuantizedMmapStorageBuilder {
 
     fn push_vector_data(&mut self, other: &[u8]) {
         debug_assert_eq!(
-            self.quantized_vector_size,
+            self.quantized_vector_size.get(),
             other.len(),
             "Pushed vector size does not match expected quantized vector size"
         );

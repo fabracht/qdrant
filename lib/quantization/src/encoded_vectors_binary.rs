@@ -432,7 +432,6 @@ impl<TBitsStoreType: BitsStoreType, TStorage: EncodedStorage>
             metadata,
             metadata_path: Some(meta_path.to_path_buf()),
             bits_store_type: PhantomData,
-            metadata_path: Some(meta_path.to_path_buf()),
         })
     }
 
